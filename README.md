@@ -1,0 +1,67 @@
+# Brussels transit ML
+
+Machine learning on a week (and counting) of Brussels public-transport data, on Azure Databricks.
+
+The data comes from [brussels-lakehouse](https://github.com/Huntsama/brussels-lakehouse): an Azure Function saves
+STIB's live waiting times and vehicle positions every 5 minutes, plus air quality (IRCEL) and Belgian grid load
+(Elia), into an ADLS Gen2 lake. That repo turns it into tables with dbt on DuckDB and publishes
+[lakehouse.jwds.me](https://lakehouse.jwds.me). This repo builds on the same lake with the Databricks stack:
+
+```mermaid
+flowchart LR
+  B[(ADLS Gen2<br/>bronze JSON)] -->|Unity Catalog<br/>external location| S[silver Delta tables]
+  S --> G[gold Delta tables]
+  G --> M[ML: training table,<br/>LightGBM + MLflow]
+  M --> P[predictions table]
+  G --> BI[Power BI report]
+  P --> BI
+```
+
+- **Unity Catalog**: catalog `brussels` with schemas `silver`, `gold`, `ml`. Databricks reaches the lake through an
+  access connector (a managed identity), no keys.
+- **Pipeline** (`notebooks/`): Spark SQL ports of the dbt models, rebuilt every morning by a Databricks job on a
+  cluster that exists only while it runs. The job fails if a data check fails.
+- **ML** (`lessons/`): guided lessons, written by me in the workspace Git folder. Two targets:
+  1. *Excess wait* per stop, line and hour: how much longer people wait than the timetable promises.
+  2. *STIB's countdown error*: following each vehicle across snapshots, STIB's prediction 5 to 20 minutes ahead is
+     off by about 1 minute, and the vehicle comes ~20 s later than shown on average (1.8 M predictions, 13 to 18 Oct).
+- **Power BI**: report on the gold tables and the model's predictions.
+- **Infrastructure as code**: `infra/main.tf` creates the workspace, the access connector and its role on the lake,
+  the Unity Catalog objects, the cluster, the job and the Git folder.
+
+## What the data says so far
+
+From the lakehouse, before any model: on a normal day (13 to 18 Oct 2026) STIB runs under half a minute behind its
+timetable (metro +0.47 min, bus +0.39, tram +0.38). Monday 12 Oct was the exception at +4.7 min. A plain average per
+stop, line and hour of day predicts Friday's excess wait with a mean error of **0.94 min**, against 1.16 for always
+guessing zero. That is the baseline a model has to beat.
+
+## Cost
+
+Azure for Students credit. The workspace costs nothing while idle; the 14-day trial covers Databricks' fees, so a
+running cluster costs only its VM (Standard_DS3_v2, ~0.30 EUR/hour), and it stops after 15 idle minutes. The
+workspace is created without a NAT gateway (`no_public_ip = false`), which would otherwise bill ~30 EUR a month
+with nothing running. The lakehouse's $10/month budget alert covers this too.
+
+## Deploy
+
+```bash
+cd infra
+cp terraform.tfvars.example terraform.tfvars   # your subscription id
+az login
+terraform init
+# the Databricks provider needs the workspace to exist before it can plan the rest
+terraform apply -target=azurerm_databricks_workspace.dbw -target=azurerm_role_assignment.connector_writes_lake
+terraform apply
+```
+
+Then run the job once by hand (`job_url` in the outputs) and compare its row counts with the DuckDB build.
+
+## Status
+
+- [x] Terraform: workspace, access connector, Unity Catalog, cluster, job, Git folder
+- [x] Silver and gold as Spark SQL notebooks, with data checks
+- [ ] Deployed, first job run matches the DuckDB row counts
+- [ ] Lessons 1 to 6 (see `lessons/`)
+- [ ] Power BI report on gold and predictions
+- [ ] When the trial ends: `sku = "premium"`

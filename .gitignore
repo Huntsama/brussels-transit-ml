@@ -1,0 +1,9 @@
+infra/.terraform/
+infra/*.tfstate*
+infra/terraform.tfvars
+infra/.terraform.lock.hcl
+infra/tfplan
+.venv/
+__pycache__/
+.ipynb_checkpoints/
+*.pbix.bak
