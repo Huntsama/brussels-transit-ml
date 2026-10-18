@@ -23,6 +23,12 @@ provider "databricks" {
 
 variable "subscription_id" { type = string }
 variable "name" { default = "belakehouse" }
+# The repo is private: a fine-grained GitHub token with Contents read/write on this repo only, so the Git folder can
+# clone and you can commit from the workspace. Pass it as TF_VAR_github_token, never in terraform.tfvars.
+variable "github_token" {
+  type      = string
+  sensitive = true
+}
 
 data "azurerm_resource_group" "rg" { name = "rg-${var.name}" }
 
@@ -116,9 +122,16 @@ resource "databricks_cluster" "single" {
 }
 
 # This repo as a Git folder in the workspace: write the lessons there, commit back to GitHub.
+resource "databricks_git_credential" "github" {
+  git_provider          = "gitHub"
+  git_username          = "Huntsama"
+  personal_access_token = var.github_token
+}
+
 resource "databricks_repo" "this" {
-  url  = "https://github.com/Huntsama/brussels-transit-ml.git"
-  path = "${data.databricks_current_user.me.repos}/brussels-transit-ml"
+  url        = "https://github.com/Huntsama/brussels-transit-ml.git"
+  path       = "${data.databricks_current_user.me.repos}/brussels-transit-ml"
+  depends_on = [databricks_git_credential.github]
 }
 
 # The pipeline notebooks the job runs, uploaded from notebooks/ on every apply that changes them.

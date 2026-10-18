@@ -49,6 +49,7 @@ with nothing running. The lakehouse's $10/month budget alert covers this too.
 cd infra
 cp terraform.tfvars.example terraform.tfvars   # your subscription id
 az login
+export TF_VAR_github_token=...                  # fine-grained token: Contents read/write on this repo only
 terraform init
 # the Databricks provider needs the workspace to exist before it can plan the rest
 terraform apply -target=azurerm_databricks_workspace.dbw -target=azurerm_role_assignment.connector_writes_lake
