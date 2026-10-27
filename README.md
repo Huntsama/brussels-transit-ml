@@ -33,7 +33,7 @@ flowchart LR
 
 STIB's feed every 20 s → Kafka (Azure Event Hubs) → Spark Structured Streaming on Databricks → `gold.line_status_live`
 (normal / slower / disrupted per line, compared with what is usual at that hour) → a FastAPI service and a Power BI report.
-Design, trade-offs, costs and setup steps: [`docs/DESIGN.md`](docs/DESIGN.md).
+Design, trade-offs, costs and setup steps: [`docs/DESIGN.md`](docs/DESIGN.md). Everything explained in plain words with diagrams: [`docs/EXPLAINED.md`](docs/EXPLAINED.md) ([PDF](docs/EXPLAINED.pdf), [draw.io](docs/architecture.drawio)).
 
 | Folder | What |
 |---|---|
