@@ -1,0 +1,42 @@
+name: ci
+# Every push: run the tests. On main, also build the two images and publish them to GitHub's registry (ghcr.io),
+# where Azure Container Apps pulls them (infra/streaming.tf).
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install pytest pandas numpy -r api/requirements.txt
+      - name: ML helpers and Kafka producer
+        run: pytest -q tests
+      - name: API
+        working-directory: api
+        run: pytest -q
+
+  images:
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions: { contents: read, packages: write }
+    strategy:
+      matrix:
+        include:
+          - { name: transit-api, context: api }
+          - { name: stib-producer, context: streaming }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with: { registry: ghcr.io, username: "${{ github.actor }}", password: "${{ secrets.GITHUB_TOKEN }}" }
+      - uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          push: true
+          tags: |
+            ghcr.io/huntsama/${{ matrix.name }}:latest
+            ghcr.io/huntsama/${{ matrix.name }}:${{ github.sha }}

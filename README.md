@@ -29,6 +29,20 @@ flowchart LR
 - **Infrastructure as code**: `infra/main.tf` creates the workspace, the access connector and its role on the lake,
   the Unity Catalog objects, the cluster, the job and the Git folder.
 
+## Live status: batch + streaming (Databricks, Spark, Kafka, FastAPI)
+
+STIB's feed every 20 s → Kafka (Azure Event Hubs) → Spark Structured Streaming on Databricks → `gold.line_status_live`
+(normal / slower / disrupted per line, compared with what is usual at that hour) → a FastAPI service and a Power BI report.
+Design, trade-offs, costs and setup steps: [`docs/DESIGN.md`](docs/DESIGN.md).
+
+| Folder | What |
+|---|---|
+| `streaming/` | Kafka producer (Docker) |
+| `notebooks/03_stream_live_status.py` | Spark streaming job: bronze events + live line status |
+| `api/` | FastAPI: `/network/status`, `/lines/{id}`, tests, Docker |
+| `infra/streaming.tf` | Event Hubs, Container Apps (producer + API), Databricks secret and job |
+| `.github/workflows/ci.yml` | Tests on every push; images to ghcr.io on main |
+
 ## How the ML work is organised
 
 ```

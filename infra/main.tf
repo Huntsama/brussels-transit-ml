@@ -87,7 +87,7 @@ resource "databricks_catalog" "brussels" {
 }
 
 resource "databricks_schema" "layer" {
-  for_each     = toset(["silver", "gold", "ml"])
+  for_each     = toset(["bronze", "silver", "gold", "ml"])
   catalog_name = databricks_catalog.brussels.name
   name         = each.key
 }
@@ -136,9 +136,9 @@ resource "databricks_repo" "this" {
 
 # The pipeline notebooks the job runs, uploaded from notebooks/ on every apply that changes them.
 resource "databricks_notebook" "pipeline" {
-  for_each = fileset("${path.module}/../notebooks", "*.sql")
+  for_each = fileset("${path.module}/../notebooks", "*.{sql,py}")
   source   = "${path.module}/../notebooks/${each.key}"
-  path     = "/Shared/brussels/${trimsuffix(each.key, ".sql")}"
+  path     = "/Shared/brussels/${trimsuffix(trimsuffix(each.key, ".sql"), ".py")}"
 }
 
 # Silver then gold every morning, on a cluster that exists only while the job runs.
@@ -178,6 +178,37 @@ resource "databricks_job" "lakehouse" {
   }
 
   email_notifications { on_failure = [data.databricks_current_user.me.user_name] }
+}
+
+# Live status every 15 minutes: process what Kafka buffered since the last run, then stop (no always-on cluster).
+# Paused by default: unpause in the Databricks UI while the producer runs (infra/streaming.tf).
+resource "databricks_job" "live_status" {
+  name = "stream-live-status"
+  schedule {
+    quartz_cron_expression = "0 0/15 6-23 * * ?"
+    timezone_id            = "Europe/Brussels"
+    pause_status           = "PAUSED"
+  }
+  job_cluster {
+    job_cluster_key = "single"
+    new_cluster {
+      spark_version      = data.databricks_spark_version.ml.id
+      node_type_id       = "Standard_DS3_v2"
+      num_workers        = 0
+      data_security_mode = "SINGLE_USER"
+      single_user_name   = data.databricks_current_user.me.user_name
+      spark_conf         = local.single_node_conf
+      custom_tags        = { ResourceClass = "SingleNode" }
+    }
+  }
+  task {
+    task_key        = "live"
+    job_cluster_key = "single"
+    notebook_task {
+      notebook_path   = databricks_notebook.pipeline["03_stream_live_status.py"].path
+      base_parameters = { trigger = "available_now" }
+    }
+  }
 }
 
 output "databricks_url" { value = "https://${azurerm_databricks_workspace.dbw.workspace_url}" }
