@@ -214,3 +214,43 @@ resource "databricks_job" "live_status" {
 output "databricks_url" { value = "https://${azurerm_databricks_workspace.dbw.workspace_url}" }
 output "cluster_id" { value = databricks_cluster.single.id }
 output "job_url" { value = databricks_job.lakehouse.url }
+
+# MLOps: retrain the grid-load model every Monday on fresh Elia + weather data, on Databricks (not a laptop).
+# The notebook logs the run to MLflow and registers brussels.ml.grid_load_lgbm, promoted to @champion only if better.
+resource "databricks_job" "train_grid_load" {
+  name = "train-grid-load"
+  schedule {
+    quartz_cron_expression = "0 0 6 ? * MON"
+    timezone_id            = "Europe/Brussels"
+    pause_status           = "PAUSED" # unpause in the UI after the first manual run works
+  }
+  job_cluster {
+    job_cluster_key = "single"
+    new_cluster {
+      spark_version      = data.databricks_spark_version.ml.id
+      node_type_id       = "Standard_DS3_v2"
+      num_workers        = 0
+      data_security_mode = "SINGLE_USER"
+      single_user_name   = data.databricks_current_user.me.user_name
+      spark_conf         = local.single_node_conf
+      custom_tags        = { ResourceClass = "SingleNode" }
+    }
+  }
+  task {
+    task_key        = "data"
+    job_cluster_key = "single"
+    spark_python_task { python_file = "${databricks_repo.this.path}/tasks/grid_load/get_data.py" }
+  }
+  task {
+    task_key        = "train"
+    job_cluster_key = "single"
+    depends_on { task_key = "data" }
+    spark_python_task { python_file = "${databricks_repo.this.path}/tasks/grid_load/notebook.py" }
+    library {
+      pypi { package = "holidays" } # the ML runtime already has lightgbm, torch and mlflow
+    }
+  }
+  email_notifications { on_failure = [data.databricks_current_user.me.user_name] }
+}
+
+output "train_grid_load_job" { value = databricks_job.train_grid_load.url }

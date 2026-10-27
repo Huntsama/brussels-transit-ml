@@ -230,6 +230,22 @@ plt.figure(figsize=(6, 3)); plt.plot(hist); plt.title("NN validation MAE (MW)");
 
 # %%
 res = mlkit.save_metrics(OUT, results)
+
+# %% [markdown]
+# ## 7b. MLOps: track this session in MLflow, register the production model
+# Every model's scores go into MLflow (one run per model, grouped under this training session). The model a daily
+# forecast would use (LightGBM correcting Elia's forecast: everything it needs is known the day before) is registered
+# as `grid_load_lgbm`. It only gets the `champion` alias if it beats the current champion on the same test hours.
+
+# %%
+mlflow, prefix = mlkit.mlflow_setup("grid_load")
+with mlflow.start_run(run_name=f"train {pd.Timestamp.now():%Y-%m-%d %H:%M}"):
+    mlkit.log_session(mlflow, results, {
+        "train": f"{train.index.min():%Y-%m-%d} to {train.index.max():%Y-%m-%d}",
+        "test": f"{test_w.index.min():%Y-%m-%d} to {test_w.index.max():%Y-%m-%d}",
+        "features": ",".join(with_elia), "lgb_trees": gbm_elia.best_iteration_})
+    info = mlflow.lightgbm.log_model(gbm_elia.booster_, "model", input_example=test_w[with_elia].head(5))
+mlkit.promote_if_better(mlflow, prefix + "grid_load_lgbm", info.model_uri, test_w[with_elia], test_w["load"])
 colors = ["#d97757" if "Elia" in k else "#5b3df5" if ("LightGBM" in k or "Neural" in k) else "#bbbbbb" for k in res.index]
 res["mae_mw"].plot.barh(color=colors, title="Test MAE in MW (lower is better; orange = Elia)"); save("06_results")
 

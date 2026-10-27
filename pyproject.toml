@@ -15,6 +15,7 @@ dependencies = [
     "jupytext",
     "nbconvert",
     "ipykernel",
+    "mlflow",
 ]
 
 [dependency-groups]

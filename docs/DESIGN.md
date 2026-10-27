@@ -85,3 +85,28 @@ Keep it on for a demo period, then remove the streaming part:
 4. In Databricks, open `/Shared/brussels/03_stream_live_status`, run it with `trigger = 1 minute` for a live look,
    then unpause the `stream-live-status` job for the 15-minute schedule.
 5. Open `api_url` from the Terraform outputs: `/docs`, `/network/status`, `/lines/71`.
+
+## MLOps: how the models are trained, versioned and promoted
+
+```
+Databricks job "train-grid-load" (every Monday, paused until you unpause it)
+  1. get_data.py      fresh Elia load + weather
+  2. notebook.py      baselines, LightGBM, neural net, scored on the latest test period
+                        │
+                        ├─► MLflow tracking: one run per session, one child run per model
+                        │     params (periods, features, trees) · metrics (MAE, MAPE) · figures · the model file
+                        │
+                        └─► Model registry: brussels.ml.grid_load_lgbm  v1, v2, v3 …
+                              promotion gate: the new version is scored next to @champion on the SAME hours
+                              better → @champion (what a forecast job loads)   worse → @challenger (kept, not live)
+```
+
+- **Tracking** answers "which settings gave which score?": compare runs side by side in Databricks → Experiments.
+- **Registry + aliases**: code always loads `models:/brussels.ml.grid_load_lgbm@champion`; switching models is a
+  registry change, not a code change, and rolling back = moving the alias to the previous version.
+- **The gate** (`src/mlkit.py: promote_if_better`, tested in `tests/test_promotion.py`) means a worse model can
+  never go live by accident, even when the weekly job runs unattended.
+- **Off Databricks** (laptop, Colab) the same code logs to a local MLflow database in `outputs/`;
+  view it with `uv run mlflow ui --backend-store-uri sqlite:///outputs/mlflow.db`.
+- **Next**: monitoring in production: compare each day's forecast with the measured load, alert when the error
+  drifts above the test MAE, and retrain early.

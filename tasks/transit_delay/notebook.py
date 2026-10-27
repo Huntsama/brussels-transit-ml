@@ -318,6 +318,21 @@ plt.xlabel("epoch"); plt.ylabel("MAE (min)"); save("08_nn_training")
 res = pd.Series(results).sort_values()
 print(res.round(3).to_string())
 mlkit.save_metrics(OUT, {k: {"mae_min": v} for k, v in results.items()})
+
+# %% [markdown]
+# ## 8b. MLOps: track this session in MLflow, register the best model as `transit_delay_lgbm`
+# (promoted to `champion` only if it beats the current one on the same test rows)
+
+# %%
+mlflow, prefix = mlkit.mlflow_setup("transit_delay")
+best_lgb = fit_lgb(no_city)
+with mlflow.start_run(run_name=f"train {pd.Timestamp.now():%Y-%m-%d %H:%M}"):
+    mlkit.log_session(mlflow, {k: {"mae_min": v} for k, v in results.items()}, {
+        "train_days": f"{train.date.min()} to {train.date.max()}",
+        "test_days": f"{test.date.min()} to {test.date.max()}",
+        "features": ",".join(no_city), "lgb_trees": best_lgb.best_iteration_})
+    info = mlflow.lightgbm.log_model(best_lgb.booster_, "model", input_example=test[no_city].head(5))
+mlkit.promote_if_better(mlflow, prefix + "transit_delay_lgbm", info.model_uri, test[no_city], test[TARGET])
 colors = ["#5b3df5" if ("LightGBM" in k or "Neural" in k) else "#bbbbbb" for k in res.index]
 res.plot.barh(color=colors, title="Test MAE, minutes (lower is better)"); save("09_results")
 

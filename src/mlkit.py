@@ -78,3 +78,54 @@ def save_metrics(out_dir, results):
     df.round(4).to_csv(Path(out_dir) / "metrics.csv")
     print(df.round(3).to_string())
     return df
+
+
+# --- MLOps: MLflow tracking + model registry -------------------------------------------------------------------
+# On Databricks: the workspace's MLflow and Unity Catalog's registry (models live in brussels.ml.<name>).
+# Anywhere else: a local MLflow database in outputs/ (see it with: uv run mlflow ui --backend-store-uri sqlite:///outputs/mlflow.db)
+
+def mlflow_setup(task):
+    """Point MLflow at the right place and select the task's experiment. Returns (mlflow, registry name prefix)."""
+    import mlflow
+    if "DATABRICKS_RUNTIME_VERSION" in os.environ:
+        mlflow.set_registry_uri("databricks-uc")
+        mlflow.set_experiment(f"/Shared/brussels/{task}")
+        return mlflow, "brussels.ml."
+    out = repo_root() / "outputs"
+    mlflow.set_tracking_uri(f"sqlite:///{out / 'mlflow.db'}")  # the registry needs a database, not plain files
+    if mlflow.get_experiment_by_name(task) is None:
+        mlflow.create_experiment(task, artifact_location=(out / "mlruns").as_uri())
+    mlflow.set_experiment(task)
+    return mlflow, ""
+
+
+def log_session(mlflow, results, params, figures_dir=None):
+    """One parent run per training session, one child run per model, so the MLflow UI can compare them side by side."""
+    import re
+    for name, metrics in results.items():
+        with mlflow.start_run(run_name=name, nested=True):
+            mlflow.log_param("model", name)
+            mlflow.log_metrics({k: float(v) for k, v in metrics.items()})
+    mlflow.log_params(params)
+    best = min(results, key=lambda k: list(results[k].values())[0])
+    mlflow.set_tag("best_model", best)
+    mlflow.log_metrics({re.sub(r"[^\w]+", "_", f"best_{k}"): float(v) for k, v in results[best].items()})
+    if figures_dir:
+        mlflow.log_artifacts(str(figures_dir), "figures")
+
+
+def promote_if_better(mlflow, name, model_uri, X, y, metric=mae):
+    """Register the new model; give it the `champion` alias only if it beats the current champion on the SAME data.
+    The forecast job always loads models:/<name>@champion, so a worse model can never go live by accident."""
+    client = mlflow.MlflowClient()
+    new = metric(y, mlflow.pyfunc.load_model(model_uri).predict(X))
+    try:
+        old = metric(y, mlflow.pyfunc.load_model(f"models:/{name}@champion").predict(X))
+    except Exception as e:  # first run, or the features changed so the old model can't score this data
+        print(f"no comparable champion ({type(e).__name__}): the new model becomes champion")
+        old = None
+    version = mlflow.register_model(model_uri, name).version
+    alias = "champion" if old is None or new < old else "challenger"
+    client.set_registered_model_alias(name, alias, version)
+    print(f"{name} v{version}: {new:.3f} vs champion {old if old is None else round(old, 3)} -> {alias}")
+    return version, alias

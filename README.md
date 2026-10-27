@@ -42,6 +42,7 @@ Design, trade-offs, costs and setup steps: [`docs/DESIGN.md`](docs/DESIGN.md).
 | `api/` | FastAPI: `/network/status`, `/lines/{id}`, tests, Docker |
 | `infra/streaming.tf` | Event Hubs, Container Apps (producer + API), Databricks secret and job |
 | `.github/workflows/ci.yml` | Tests on every push; images to ghcr.io on main |
+| `src/mlkit.py` + `infra/main.tf` | MLOps: MLflow tracking, model registry with a champion/challenger gate, weekly retraining job on Databricks |
 
 ## How the ML work is organised
 

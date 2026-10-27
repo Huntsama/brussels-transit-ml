@@ -11,3 +11,5 @@ data/
 .pytest_cache/
 demo/out/
 demo/*.log
+outputs/mlflow.db
+outputs/mlruns/
