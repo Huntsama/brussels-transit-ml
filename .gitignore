@@ -9,3 +9,5 @@ __pycache__/
 *.pbix.bak
 data/
 .pytest_cache/
+demo/out/
+demo/*.log
