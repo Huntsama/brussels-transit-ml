@@ -29,6 +29,37 @@ flowchart LR
 - **Infrastructure as code**: `infra/main.tf` creates the workspace, the access connector and its role on the lake,
   the Unity Catalog objects, the cluster, the job and the Git folder.
 
+## How the ML work is organised
+
+```
+tasks/<task>/get_data.py    download or export the inputs        -> data/<task>/      (not in git)
+tasks/<task>/notebook.py    the whole study: checks, plots, features, split, baselines, models, error analysis
+outputs/<task>/             report.html (read this), notebook.ipynb (with outputs), figures/, metrics.csv
+src/mlkit.py                shared helpers: paths, time split, leak-free history, metrics, figures
+tests/                      pytest: the split never mixes time, history features never see the future
+```
+
+Run one task end to end (CPU is enough): `bash run.sh grid_load` or `bash run.sh transit_delay`. Tests: `uv run pytest -q`.
+On another machine or in Colab: open `outputs/<task>/notebook.ipynb` and upload `src/mlkit.py` + the files in `data/<task>/` when asked.
+
+| Task | Question | Data | Status |
+|---|---|---|---|
+| `transit_delay` | How many minutes longer than the timetable will people wait at each stop next hour? | lakehouse, 835k stop-hours, 10-26 Oct 2026 | done: LightGBM 1.018 min MAE vs 1.146 best rule |
+| `grid_load` | Tomorrow's Belgian electricity demand, hour by hour: can we beat Elia's own forecast? | Elia since 2015 + Open-Meteo weather | done: Elia 256 MW MAE; LightGBM 264; LightGBM correcting Elia 235 (8% better) |
+
+### More projects this data supports (not built yet)
+
+| Idea | Why it is worth it | Data |
+|---|---|---|
+| Correct STIB's countdown | STIB's "arrives in N min" is off by ~1 min and biased late: learn the correction | lakehouse snapshots (1.8M predictions) |
+| NO₂ forecast per station, 24 h ahead | Air-quality alerts; traffic and transit features from the lakehouse | IRCEL history (open API) + weather |
+| Disruption detector | Flag a bad hour like Monday 12 Oct as it starts (anomaly detection) | lakehouse, live |
+| Grid peak alert | Will tomorrow's peak exceed a threshold? Classification on top of `grid_load` | Elia + weather |
+| Solar effect | How much rooftop solar hides from the grid each sunny hour | Elia + radiation |
+
+Power **outages** cannot be predicted from this data: none of these sources records outages. The closest honest
+targets are demand peaks and disruption alerts above.
+
 ## What the data says so far
 
 From the lakehouse, before any model: on a normal day (13 to 18 Oct 2026) STIB runs under half a minute behind its

@@ -7,3 +7,5 @@ infra/tfplan
 __pycache__/
 .ipynb_checkpoints/
 *.pbix.bak
+data/
+.pytest_cache/

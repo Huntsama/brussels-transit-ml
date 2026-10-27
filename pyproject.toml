@@ -1,0 +1,33 @@
+[project]
+name = "brussels-transit-ml"
+version = "0.1.0"
+description = "Machine learning on Belgian open data: transit delays (STIB) and electricity demand (Elia)"
+requires-python = ">=3.11"
+dependencies = [
+    "pandas",
+    "pyarrow",
+    "matplotlib",
+    "scikit-learn",
+    "lightgbm",
+    "torch",
+    "duckdb",
+    "holidays",
+    "jupytext",
+    "nbconvert",
+    "ipykernel",
+]
+
+[dependency-groups]
+dev = ["pytest"]
+
+[tool.uv]
+package = false
+
+# CPU build of PyTorch: no 2 GB CUDA download on a laptop without a GPU
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true

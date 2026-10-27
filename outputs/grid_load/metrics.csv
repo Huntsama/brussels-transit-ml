@@ -1,0 +1,8 @@
+,mae_mw,mape_pct
+LightGBM + Elia's forecast as input,234.7878,2.5485
+Elia day-ahead forecast (the professionals),256.0561,2.7514
+LightGBM (calendar + lags + weather),264.4375,2.895
+Neural network (embeddings + MLP),267.9732,2.9233
+LightGBM without weather,287.8561,3.1361
+Same hour last week,441.7873,4.7478
+"Mean of same hour, 2-7 days back",580.9942,6.3323
