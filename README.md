@@ -32,7 +32,7 @@ Full studies with plots and error analysis: `outputs/<task>/report.html` (downlo
 | Tests + CI (GitHub Actions, images to ghcr.io) | done, green |
 | FastAPI service + Kafka producer (`api/`, `streaming/`) | code, tests and Docker images done |
 | Databricks platform in Terraform (`infra/`, `notebooks/`) | written; first deployment pending |
-| Power BI report, Databricks lessons | in progress |
+| Power BI report | in progress |
 
 ## Databricks platform
 
@@ -55,7 +55,7 @@ flowchart LR
   access connector (a managed identity), no keys.
 - **Pipeline** (`notebooks/`): Spark SQL ports of the dbt models, rebuilt every morning by a Databricks job on a
   cluster that exists only while it runs. The job fails if a data check fails.
-- **ML on Databricks** (`lessons/`, in progress): the transit model rebuilt step by step in the workspace. Two targets:
+- **ML on Databricks** (in progress): the transit model trained and tracked in the workspace. Two targets:
   1. *Excess wait* per stop, line and hour: how much longer people wait than the timetable promises.
   2. *STIB's countdown error*: following each vehicle across snapshots, STIB's prediction 5 to 20 minutes ahead is
      off by about 1 minute, and the vehicle comes ~20 s later than shown on average (1.8 M predictions, 13 to 18 Oct).
@@ -143,6 +143,5 @@ Then run the job once by hand (`job_url` in the outputs) and compare its row cou
 - [x] Terraform: workspace, access connector, Unity Catalog, cluster, job, Git folder
 - [x] Silver and gold as Spark SQL notebooks, with data checks
 - [ ] Deployed, first job run matches the DuckDB row counts
-- [ ] Lessons 1 to 6 (see `lessons/`)
 - [ ] Power BI report on gold and predictions
 - [ ] When the trial ends: `sku = "premium"`

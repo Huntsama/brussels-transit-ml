@@ -108,7 +108,7 @@ locals {
   }
 }
 
-# For the notebooks and lessons. Stops itself after 15 idle minutes.
+# For the notebooks. Stops itself after 15 idle minutes.
 resource "databricks_cluster" "single" {
   cluster_name            = "single-node"
   spark_version           = data.databricks_spark_version.ml.id
@@ -121,7 +121,7 @@ resource "databricks_cluster" "single" {
   custom_tags             = { ResourceClass = "SingleNode" }
 }
 
-# This repo as a Git folder in the workspace: write the lessons there, commit back to GitHub.
+# This repo as a Git folder in the workspace: notebooks are edited there and committed back to GitHub.
 resource "databricks_git_credential" "github" {
   git_provider          = "gitHub"
   git_username          = "Huntsama"

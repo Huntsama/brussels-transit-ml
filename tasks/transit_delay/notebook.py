@@ -383,4 +383,4 @@ if test["disrupted"].any():
 #   average a lot.
 #
 # **Next.** More weeks of data (weekly patterns, a second disrupted day to test on), weather as a feature, and
-# lesson 5's second target: correcting STIB's own countdown.
+# a second target: correcting STIB's own countdown.
