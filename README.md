@@ -1,6 +1,40 @@
 # Brussels transit ML
 
-Machine learning on a week (and counting) of Brussels public-transport data, on Azure Databricks.
+[![ci](https://github.com/Huntsama/brussels-transit-ml/actions/workflows/ci.yml/badge.svg)](https://github.com/Huntsama/brussels-transit-ml/actions/workflows/ci.yml)
+
+Machine learning on Belgian open data: **beating the grid operator's own electricity forecast** and **predicting
+how late Brussels buses, trams and metros run**. Then the same data on an Azure Databricks platform with MLflow,
+Kafka streaming and a FastAPI service.
+
+## Results
+
+Every model is tested on later data than it was trained on (time split, no leakage; checked by tests in `tests/`).
+
+**Belgian electricity demand, day ahead** (`grid_load`, Elia data since 2015 + weather). Elia's own forecast is off by
+256 MW on average. LightGBM that takes Elia's forecast as one input and corrects it: **235 MW, 8% better**.
+
+![grid load results](outputs/grid_load/figures/06_results.png)
+
+**Extra wait at each STIB stop, next hour** (`transit_delay`, 835k stop-hours, 10-26 Oct 2026). LightGBM: **1.02 min**
+mean error vs 1.15 for the best rule (average per stop, line and hour), 11% better. Adding air quality, grid and city
+features did not help, so the final model leaves them out.
+
+![transit delay results](outputs/transit_delay/figures/09_results.png)
+
+Full studies with plots and error analysis: `outputs/<task>/report.html` (download and open) or
+`outputs/<task>/notebook.ipynb` (renders on GitHub).
+
+## What is built, what is in progress
+
+| Part | State |
+|---|---|
+| ML studies (`tasks/`, `outputs/`, `src/mlkit.py`) | done, reproducible with `bash run.sh <task>` |
+| Tests + CI (GitHub Actions, images to ghcr.io) | done, green |
+| FastAPI service + Kafka producer (`api/`, `streaming/`) | code, tests and Docker images done |
+| Databricks platform in Terraform (`infra/`, `notebooks/`) | written; first deployment pending |
+| Power BI report, Databricks lessons | in progress |
+
+## Databricks platform
 
 The data comes from [brussels-lakehouse](https://github.com/Huntsama/brussels-lakehouse): an Azure Function saves
 STIB's live waiting times and vehicle positions every 5 minutes, plus air quality (IRCEL) and Belgian grid load
@@ -21,7 +55,7 @@ flowchart LR
   access connector (a managed identity), no keys.
 - **Pipeline** (`notebooks/`): Spark SQL ports of the dbt models, rebuilt every morning by a Databricks job on a
   cluster that exists only while it runs. The job fails if a data check fails.
-- **ML** (`lessons/`): guided lessons, written by me in the workspace Git folder. Two targets:
+- **ML on Databricks** (`lessons/`, in progress): the transit model rebuilt step by step in the workspace. Two targets:
   1. *Excess wait* per stop, line and hour: how much longer people wait than the timetable promises.
   2. *STIB's countdown error*: following each vehicle across snapshots, STIB's prediction 5 to 20 minutes ahead is
      off by about 1 minute, and the vehicle comes ~20 s later than shown on average (1.8 M predictions, 13 to 18 Oct).
@@ -77,7 +111,7 @@ targets are demand peaks and disruption alerts above.
 
 ## What the data says so far
 
-From the lakehouse, before any model: on a normal day (13 to 18 Oct 2026) STIB runs under half a minute behind its
+A first look at the lakehouse, before any model: on a normal day (13 to 18 Oct 2026) STIB runs under half a minute behind its
 timetable (metro +0.47 min, bus +0.39, tram +0.38). Monday 12 Oct was the exception at +4.7 min. A plain average per
 stop, line and hour of day predicts Friday's excess wait with a mean error of **0.94 min**, against 1.16 for always
 guessing zero. That is the baseline a model has to beat.
