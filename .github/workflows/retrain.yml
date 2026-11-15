@@ -43,4 +43,4 @@ jobs:
                   outputs/transit_delay/history.csv outputs/transit_delay/figures outputs/transit_delay/hardest_lines.csv \
                   outputs/transit_delay/train_summary.json 2>/dev/null || true
           git diff --cached --quiet || git commit -m "Weekly retrain: transit_delay on data to $(date -u +%F)"
-          git push
+          git pull --rebase -q origin main && git push
