@@ -1,0 +1,7 @@
+,mae_min
+LightGBM without air/grid/city features,1.018
+LightGBM,1.027
+Neural network (embeddings + MLP),1.053
+Average per stop/line/hour of day,1.146
+Always 0 (trust the timetable),1.277
+Same as one hour ago,1.374
