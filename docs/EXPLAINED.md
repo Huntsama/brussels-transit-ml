@@ -22,7 +22,8 @@ stop, refreshed about every 20 seconds. It keeps no history. This project:
 - On a normal day STIB runs ~20 seconds behind its timetable.
 - On **12 October 2026, a national strike**, the whole network ran 4.4 minutes late all day. The data caught it
   without being told; a 3-day storm (23-25 Oct) did *not* slow STIB down.
-- A model predicts next hour's delay per stop **11% better** than the best simple rule.
+- A model predicts next hour's delay per stop **8.5% better** than the best simple rule over five weeks of data (8.0-8.7% on
+  two separate test weeks; it was 11% on the first 18 days, before the rule had much history).
 - For electricity, used as a correction layer on Elia's own forecast and given only weather forecasts issued two
   days ahead, the model **beats Elia by 7%** (241 vs 259 MW). On its own it beats Elia on public holidays.
 
