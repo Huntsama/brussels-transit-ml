@@ -34,6 +34,9 @@ jobs:
       - name: record and check
         id: gate
         run: uv run python tasks/transit_delay/record_history.py --min-gain 3
+      - name: redraw the README figures
+        if: always() && steps.gate.outcome != 'skipped'
+        run: uv run python docs/readme_figures.py
       - name: commit the outputs
         if: always() && steps.gate.outcome != 'skipped'
         run: |
@@ -41,6 +44,6 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add outputs/transit_delay/metrics.csv outputs/transit_delay/backtest.csv outputs/transit_delay/backtest.md \
                   outputs/transit_delay/history.csv outputs/transit_delay/figures outputs/transit_delay/hardest_lines.csv \
-                  outputs/transit_delay/train_summary.json 2>/dev/null || true
+                  outputs/transit_delay/train_summary.json docs/img/readme-*.png 2>/dev/null || true
           git diff --cached --quiet || git commit -m "Weekly retrain: transit_delay on data to $(date -u +%F)"
           git pull --rebase -q origin main && git push
