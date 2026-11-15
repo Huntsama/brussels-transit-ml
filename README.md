@@ -114,12 +114,20 @@ train.py [--nn]             standard split, baselines, LightGBM (+ NN), MLflow w
                             champion/challenger gate                -> outputs/transit_delay/train_summary.json
 evaluate.py                 metrics.csv, figures 07-10, hardest lines
 backtest.py [--nn]          weekly rolling backtest                 -> outputs/transit_delay/backtest.csv, backtest.md
+record_history.py           one row per run in history.csv; fails if the gain over the best rule drops below 3%
 ```
 
 Full run on the desktop (4 cores, i5-2400, ~5.5 GB RAM in WSL): 46 min, peak memory 1.1 GB (train.py); the
 notebook alone runs in 10 s and 0.8 GB. The old all-in-one notebook as a script peaked at 2.1 GB, and its Jupyter
 kernel was killed for lack of memory. Tests check that the SQL features equal the original pandas ones on the 18-day
 snapshot and that changing later data never changes an earlier feature.
+
+**Weekly retrain** (, Monday 06:30 UTC): brussels-lakehouse exports its gold tables
+to its static site every Monday 03:30; this workflow downloads them, runs features -> train -> evaluate -> backtest
+(LightGBM only), appends a row to  (data snapshot, MAE, gain over the best rule,
+backtest mean and spread) and commits the outputs.  fails the run, and GitHub emails, when
+LightGBM is less than 3% better than the best simple rule on the newest week: a model that stops beating a rule
+should not stay the answer. MLflow stays local ( in CI); the history file is the record.
 
 Run one task end to end (CPU is enough): `bash run.sh grid_load` or `bash run.sh transit_delay`. `FETCH=0 bash run.sh
 <task>` skips `get_data.py` (use it when the Parquet files were copied in by hand). Tests: `uv run pytest -q tests`.
