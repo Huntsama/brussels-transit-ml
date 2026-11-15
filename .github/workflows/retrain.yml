@@ -1,0 +1,46 @@
+name: retrain
+# Weekly: take the newest lakehouse export (published Monday 03:30 UTC by brussels-lakehouse's export workflow),
+# rebuild the features, retrain LightGBM, score it on the standard split and on the rolling backtest, append the
+# result to outputs/transit_delay/history.csv and commit the outputs. Fails (GitHub emails) if LightGBM no longer
+# beats the best simple rule by 3% on the newest week. The neural network is left to manual runs (CPU time).
+on:
+  schedule:
+    - cron: "30 6 * * 1"
+  workflow_dispatch:
+
+concurrency: retrain
+
+permissions:
+  contents: write
+
+jobs:
+  retrain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync
+      - name: newest lakehouse export
+        run: |
+          mkdir -p data/transit_delay
+          for t in stop_line_hourly city_hourly; do
+            curl -sSfL -o "data/transit_delay/$t.parquet" "https://belakehouselake.z1.web.core.windows.net/data/$t.parquet"
+          done
+      - run: uv run python tasks/transit_delay/features.py
+      - run: uv run python tasks/transit_delay/train.py --no-mlflow
+      - run: uv run python tasks/transit_delay/evaluate.py
+      - run: uv run python tasks/transit_delay/backtest.py
+      - name: record and check
+        id: gate
+        run: uv run python tasks/transit_delay/record_history.py --min-gain 3
+      - name: commit the outputs
+        if: always() && steps.gate.outcome != 'skipped'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add outputs/transit_delay/metrics.csv outputs/transit_delay/backtest.csv outputs/transit_delay/backtest.md \
+                  outputs/transit_delay/history.csv outputs/transit_delay/figures outputs/transit_delay/hardest_lines.csv \
+                  outputs/transit_delay/train_summary.json 2>/dev/null || true
+          git diff --cached --quiet || git commit -m "Weekly retrain: transit_delay on data to $(date -u +%F)"
+          git push
