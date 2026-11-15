@@ -106,7 +106,7 @@ print("correlation, midday load vs sunshine:  ", round(mid["load"].corr(mid["sho
 # | hour, weekday, month, day of year, holiday | yes, the calendar |
 # | load 2 days earlier, same hour | yes (Elia's measured load arrives with about a day of delay, so 1 day back is not safe) |
 # | load 7 days earlier, same hour; mean of the same hour over days 2–7 back | yes |
-# | weather of day D | **in real life only as a forecast.** Here we use the *measured* weather: an upper bound on what a weather forecast could give. The model *without* weather shows the floor. |
+# | weather of day D | **in real life only as a forecast.** Here we use the *measured* weather: an upper bound. `fair_comparison.py` reruns the test with weather forecasts as issued 1-2 days ahead (results below). |
 #
 # **Split by time:** train 2015–2022, validation 2023 (for early stopping), **test = 2024 until now**, never seen.
 
@@ -292,15 +292,16 @@ plt.legend(); plt.title("The last test week"); plt.ylabel("MW"); save("08_last_w
 #   close behind (trees still win on tabular data).
 # - **On public holidays our model beats Elia** (242 vs 321 MW): Elia's forecast struggles on holidays, the calendar
 #   feature handles them.
-# - **Using Elia's forecast as an input and learning its errors beats Elia by 8%** (235 vs 256 MW). This is the
-#   most useful result: a correction layer on top of an existing forecast.
+# - **Using Elia's forecast as an input and learning its errors beats Elia by 8%** (235 vs 256 MW) with measured
+#   weather, and **by 7% with weather forecasts issued two days ahead** (241 vs 259 MW, Mar 2024 to Oct 2026, see
+#   `outputs/grid_load/fair-comparison.md`). This is the most useful result: a correction layer on an existing forecast.
 # - Weather is worth about 24 MW (288 → 264).
 #
 # **Caveats, said plainly.**
 # - The weather features are the *measured* weather of day D; in real life only a weather forecast exists the day
-#   before. So the scores with weather are a best case. The no-weather model (288 MW) is the floor. The honest next
-#   step is Open-Meteo's archive of past *forecasts* (available since 2022).
+#   before. So the scores with weather here are a best case. **Done since:** `fair_comparison.py` scores the same
+#   models with Open-Meteo's archive of past ECMWF forecasts (from Mar 2024): the correction model keeps its lead
+#   (241 vs 259 MW with forecasts issued two days ahead); LightGBM alone does not beat Elia overall (264 vs 259).
 # - Elia's measured load arrives with about a day of delay, so the newest load feature is 2 days old: built in.
 #
-# **Next.** Historical weather *forecasts* instead of measured weather; probabilistic forecasts (Elia also publishes
-# 10%–90% bands); a peak alert on top.
+# **Next.** Probabilistic forecasts (Elia also publishes 10%–90% bands); a peak alert on top.

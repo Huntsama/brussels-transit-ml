@@ -11,7 +11,11 @@ Kafka streaming and a FastAPI service.
 Every model is tested on later data than it was trained on (time split, no leakage; checked by tests in `tests/`).
 
 **Belgian electricity demand, day ahead** (`grid_load`, Elia data since 2015 + weather). Elia's own forecast is off by
-256 MW on average. LightGBM that takes Elia's forecast as one input and corrects it: **235 MW, 8% better**.
+259 MW on average (Mar 2024 to Oct 2026, 22,870 hours). LightGBM that takes Elia's forecast as one input and corrects
+it, fed only weather forecasts issued two days ahead (what was really known when Elia published): **241 MW, 7% better**.
+With the measured weather of the day (an upper bound nobody has in advance) it is 239 MW. Without Elia's forecast as
+input, LightGBM does not beat Elia overall (264 vs 259 MW) but does on public holidays (243 vs 322 MW). Details:
+[`outputs/grid_load/fair-comparison.md`](outputs/grid_load/fair-comparison.md).
 
 ![grid load results](outputs/grid_load/figures/06_results.png)
 
@@ -94,7 +98,7 @@ On another machine or in Colab: open `outputs/<task>/notebook.ipynb` and upload 
 | Task | Question | Data | Status |
 |---|---|---|---|
 | `transit_delay` | How many minutes longer than the timetable will people wait at each stop next hour? | lakehouse, 835k stop-hours, 10-26 Oct 2026 | done: LightGBM 1.018 min MAE vs 1.146 best rule |
-| `grid_load` | Tomorrow's Belgian electricity demand, hour by hour: can we beat Elia's own forecast? | Elia since 2015 + Open-Meteo weather | done: Elia 256 MW MAE; LightGBM 264; LightGBM correcting Elia 235 (8% better) |
+| `grid_load` | Tomorrow's Belgian electricity demand, hour by hour: can we beat Elia's own forecast? | Elia since 2015 + Open-Meteo weather (measured + archived forecasts) | done: with forecast weather, Elia 259 MW MAE; LightGBM 264; LightGBM correcting Elia 241 (7% better) |
 
 ### More projects this data supports (not built yet)
 
