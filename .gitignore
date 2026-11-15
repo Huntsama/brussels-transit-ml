@@ -13,3 +13,5 @@ demo/out/
 demo/*.log
 outputs/mlflow.db
 outputs/mlruns/
+outputs/*/models/
+outputs/*/test_predictions.parquet
