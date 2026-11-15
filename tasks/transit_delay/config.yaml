@@ -1,0 +1,42 @@
+# transit_delay pipeline settings: features.py -> train.py -> evaluate.py -> backtest.py (all read this file)
+target: excess_wait_min
+features: [stop_id, line_id, mode, hod, dow, scheduled_wait_min,
+           prev_hour_ewt, prev_days_same_hod_ewt, city_prev_ewt, no2_prev, load_prev]
+city_features: [city_prev_ewt, no2_prev, load_prev]   # dropped for "LightGBM without air/grid/city features"
+categorical: [stop_id, line_id, mode]
+
+# standard split, same as the original notebook: the last quarter of the full days is the test,
+# the 2 days before it validate (early stopping), everything earlier trains; disrupted days never train or validate
+split:
+  test_fraction: 0.25
+  min_test_days: 4
+  val_days: 2
+
+# rolling backtest: weekly test blocks ending on the last full day, newest first
+backtest:
+  n_folds: 4
+  test_days: 7
+  val_days: 2
+  min_train_days: 14     # a fold is skipped if fewer full days come before its validation days
+
+lightgbm:              # same as the notebook
+  objective: l1
+  n_estimators: 2000
+  learning_rate: 0.05
+  num_leaves: 63
+  min_child_samples: 50
+  subsample: 0.8
+  subsample_freq: 1
+  colsample_bytree: 0.8
+  verbose: -1
+early_stopping_rounds: 100
+
+nn:                    # embeddings + MLP, only with --nn
+  epochs: 40
+  batch: 4096
+  lr: 0.002
+  weight_decay: 0.00001
+  patience: 5
+  seed: 0
+
+registry_name: transit_delay_lgbm
