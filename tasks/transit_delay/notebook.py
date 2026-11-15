@@ -253,4 +253,38 @@ display(Markdown((OUT / "backtest.md").read_text()))
 # %% [markdown]
 # ## 10. What we found (run of 15 Nov 2026, data 10 Oct to 14 Nov)
 #
-# FINDINGS
+# **Data.** 1,729,314 stop-line-hours, 1,894 stops, 89 lines, no missing values. 35 full days (Fri 16 Oct and
+# today, Sun 15 Nov, are partial and left out); one disrupted day (Mon 12 Oct: median excess wait 4.44 min against
+# a normal 0.34 min), kept out of training. 361 glitch values clipped (0.02%). 1,659,005 rows in the model table.
+#
+# **Correlation.** With five weeks, the links with the city measures are weaker than in the first 18 days: within
+# the hour of day, vehicles on the road r = −0.14 (was −0.29), grid load +0.14 (+0.17), NO₂ +0.05 (+0.19).
+# None of them is strong enough to matter for a prediction, and the model confirms it (below).
+#
+# **Prediction, standard split (test = Sat 07 to Sat 14 Nov, 385k rows, never seen in training).**
+#
+# | Model | MAE (min), 5 weeks | 18 days (test 23-26 Oct) |
+# |---|---|---|
+# | Same as one hour ago | 1.290 | 1.374 |
+# | Always 0 (trust the timetable) | 1.194 | 1.277 |
+# | Average per stop/line/hour of day | 0.987 | 1.146 |
+# | Neural network (embeddings + MLP) | 0.921 | 1.053 |
+# | LightGBM | 0.910 | 1.027 |
+# | **LightGBM without air/grid/city features** | **0.903** | **1.018** |
+#
+# - LightGBM still wins, but **its edge over the best simple rule shrank from 11% to 8.5%** (0.987 → 0.903).
+#   Most of the change is the rule getting better: with five weeks of history, "the average of this stop, line and
+#   hour" is a much better guess (1.146 → 0.987), and that average is also LightGBM's main input.
+# - The **rolling backtest** agrees: on the two most recent weeks LightGBM is 8.0% and 8.7% better than the best
+#   rule (0.893 vs 0.970, 0.885 vs 0.970). Only two weeks have the 14 training days the backtest asks for, so the
+#   spread between folds says little.
+# - Air quality, grid load and city delays still do not help: without them the model is slightly better, on the
+#   standard split and in both backtest weeks.
+# - The model without city features used all 2,000 trees in every run (early stopping never triggered), so it is
+#   not fully converged; more trees or a higher learning rate may gain a little more.
+# - The neural network is close (0.921) but trees still win on this table.
+# - Hardest to predict: line 72 (3.2 min mean error) and the night buses (N04 to N18): few vehicles per hour, so
+#   one late bus moves the average a lot.
+#
+# **Next.** A weather feature, a disruption detector that flags a bad day as it starts (the median rule here uses
+# the whole day), and the second target: correcting STIB's own countdown.
