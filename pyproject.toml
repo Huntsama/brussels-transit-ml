@@ -10,7 +10,7 @@ dependencies = [
     "scikit-learn",
     "lightgbm",
     "torch",
-    "duckdb",
+    "duckdb>=1.4,<2",  # 2.x wheels need AVX2; the desktop (i5-2400) only has AVX
     "holidays",
     "jupytext",
     "nbconvert",
