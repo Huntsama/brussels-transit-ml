@@ -23,8 +23,8 @@ stop, refreshed about every 20 seconds. It keeps no history. This project:
 - On **12 October 2026, a national strike**, the whole network ran 4.4 minutes late all day. The data caught it
   without being told; a 3-day storm (23-25 Oct) did *not* slow STIB down.
 - A model predicts next hour's delay per stop **11% better** than the best simple rule.
-- For electricity, the model comes within 0.15 points of Elia's professional forecast and, used as a correction
-  layer on Elia's forecast, **beats it by 8%**.
+- For electricity, used as a correction layer on Elia's own forecast and given only weather forecasts issued two
+  days ahead, the model **beats Elia by 7%** (241 vs 259 MW). On its own it beats Elia on public holidays.
 
 ![The whole system](img/whole-system.png)
 
