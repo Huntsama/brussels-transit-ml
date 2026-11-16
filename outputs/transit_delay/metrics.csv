@@ -1,6 +1,6 @@
 ,mae_min
-LightGBM without air/grid/city features,0.9027
-LightGBM,0.9111
-Average per stop/line/hour of day,0.9866
-Always 0 (trust the timetable),1.1937
-Same as one hour ago,1.2899
+LightGBM without air/grid/city features,0.9052
+LightGBM,0.9137
+Average per stop/line/hour of day,0.9943
+Always 0 (trust the timetable),1.1953
+Same as one hour ago,1.2912

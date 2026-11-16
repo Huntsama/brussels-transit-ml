@@ -1,6 +1,6 @@
 {
-  "snapshot_id": "e05b73d2bc3f5f46_2026-10-09T22_2026-11-15T15",
-  "git_commit": "a217e62",
+  "snapshot_id": "5ae4361b84f83371_2026-10-09T22_2026-11-16T11",
+  "git_commit": "899af50",
   "train_days": [
     "2026-10-10",
     "2026-11-04"
@@ -11,18 +11,18 @@
   ],
   "test_days": [
     "2026-11-07",
-    "2026-11-14"
+    "2026-11-15"
   ],
   "rows": {
     "train": 1135877,
     "val": 95588,
-    "test": 384968
+    "test": 433446
   },
   "models": {
     "LightGBM": {
-      "trees": 860,
-      "fit_seconds": 77,
-      "val_mae": 0.8560101086381459,
+      "trees": 1068,
+      "fit_seconds": 80,
+      "val_mae": 0.8553559849701897,
       "features": [
         "stop_id",
         "line_id",
@@ -38,9 +38,9 @@
       ]
     },
     "LightGBM without air/grid/city features": {
-      "trees": 1989,
-      "fit_seconds": 147,
-      "val_mae": 0.8524967223274853,
+      "trees": 2000,
+      "fit_seconds": 122,
+      "val_mae": 0.8522337728719003,
       "features": [
         "stop_id",
         "line_id",
