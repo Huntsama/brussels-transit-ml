@@ -1,11 +1,16 @@
 fold,test_start,test_end,train_days,model,mae
-1,2026-11-09,2026-11-15,27,Always 0 (trust the timetable),1.1818
-1,2026-11-09,2026-11-15,27,Average per stop/line/hour of day,0.9632
-1,2026-11-09,2026-11-15,27,Same as one hour ago,1.2737
-1,2026-11-09,2026-11-15,27,LightGBM,0.8861
-1,2026-11-09,2026-11-15,27,LightGBM without air/grid/city features,0.8825
-2,2026-11-02,2026-11-08,20,Always 0 (trust the timetable),1.17
-2,2026-11-02,2026-11-08,20,Average per stop/line/hour of day,0.9678
-2,2026-11-02,2026-11-08,20,Same as one hour ago,1.2504
-2,2026-11-02,2026-11-08,20,LightGBM,0.886
-2,2026-11-02,2026-11-08,20,LightGBM without air/grid/city features,0.8814
+1,2026-11-16,2026-11-22,34,Always 0 (trust the timetable),1.2278
+1,2026-11-16,2026-11-22,34,Average per stop/line/hour of day,0.9821
+1,2026-11-16,2026-11-22,34,Same as one hour ago,1.3182
+1,2026-11-16,2026-11-22,34,LightGBM,0.9138
+1,2026-11-16,2026-11-22,34,LightGBM without air/grid/city features,0.9103
+2,2026-11-09,2026-11-15,27,Always 0 (trust the timetable),1.1818
+2,2026-11-09,2026-11-15,27,Average per stop/line/hour of day,0.9632
+2,2026-11-09,2026-11-15,27,Same as one hour ago,1.2737
+2,2026-11-09,2026-11-15,27,LightGBM,0.8862
+2,2026-11-09,2026-11-15,27,LightGBM without air/grid/city features,0.8824
+3,2026-11-02,2026-11-08,20,Always 0 (trust the timetable),1.17
+3,2026-11-02,2026-11-08,20,Average per stop/line/hour of day,0.9678
+3,2026-11-02,2026-11-08,20,Same as one hour ago,1.2504
+3,2026-11-02,2026-11-08,20,LightGBM,0.8864
+3,2026-11-02,2026-11-08,20,LightGBM without air/grid/city features,0.8818

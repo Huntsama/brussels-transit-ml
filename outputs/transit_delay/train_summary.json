@@ -1,28 +1,28 @@
 {
-  "snapshot_id": "5ae4361b84f83371_2026-10-09T22_2026-11-16T11",
-  "git_commit": "899af50",
+  "snapshot_id": "6ab376f3457afc7c_2026-10-09T22_2026-11-23T13",
+  "git_commit": "9885995",
   "train_days": [
     "2026-10-10",
-    "2026-11-04"
+    "2026-11-10"
   ],
   "val_days": [
-    "2026-11-05",
-    "2026-11-06"
+    "2026-11-11",
+    "2026-11-12"
   ],
   "test_days": [
-    "2026-11-07",
-    "2026-11-15"
+    "2026-11-13",
+    "2026-11-22"
   ],
   "rows": {
-    "train": 1135877,
-    "val": 95588,
-    "test": 433446
+    "train": 1424524,
+    "val": 95060,
+    "test": 477119
   },
   "models": {
     "LightGBM": {
-      "trees": 1068,
-      "fit_seconds": 80,
-      "val_mae": 0.8553559849701897,
+      "trees": 2000,
+      "fit_seconds": 99,
+      "val_mae": 0.8634020728634471,
       "features": [
         "stop_id",
         "line_id",
@@ -39,8 +39,8 @@
     },
     "LightGBM without air/grid/city features": {
       "trees": 2000,
-      "fit_seconds": 122,
-      "val_mae": 0.8522337728719003,
+      "fit_seconds": 94,
+      "val_mae": 0.8672476064050222,
       "features": [
         "stop_id",
         "line_id",
@@ -53,7 +53,7 @@
       ]
     }
   },
-  "registered": "LightGBM without air/grid/city features",
+  "registered": "LightGBM",
   "baselines": [
     "Always 0 (trust the timetable)",
     "Average per stop/line/hour of day",
